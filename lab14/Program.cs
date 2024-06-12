@@ -5,17 +5,12 @@ using Laba10;
 
 namespace lab14;
 
-public class Program
+public static class Program
 {
     /// <summary>
     /// База данных игровых ключей. У Zeed два ключа активации.
     /// </summary>
-    static ActivationKey[] _keysDatabase = new ActivationKey[]
-    {
-        new ActivationKey("Zeed", "IDJHH123HJS"),
-        new ActivationKey("Zeed", "KJF123KAD23"),
-        new ActivationKey("Minecraft", "ISO675KAD=="),
-    };
+    private static ActivationKey[] _keysDatabase;
     
     /// <summary>
     /// Структура для замены dynamic типа в задании с let
@@ -37,6 +32,12 @@ public class Program
         //с помощью функции хелпера получаем рандом, сид которого зависит
         //от текущего юникс времени
         _random = Helpers.Helpers.GetOrCreateRandom();
+        _keysDatabase = new ActivationKey[]
+        {
+            new ActivationKey("Zeed", "IDJHH123HJS"),
+            new ActivationKey("Zeed", "KJF123KAD23"),
+            new ActivationKey("Minecraft", "ISO675KAD=="),
+        };
 
         while (true)
         {
@@ -75,7 +76,7 @@ public class Program
             {
                 case 1: // сгенерировать коллекцию
                     uint storesCount = Helpers.Helpers.EnterUInt("количество магазинов", 1, 10);
-                    collection = GetPart1Collection((int) storesCount);
+                    collection = GetPart1Collection((int) storesCount, (i) => (int)Helpers.Helpers.EnterUInt("количество игр в магазине #" + (i + 1).ToString(), 1, 5));
                     Console.WriteLine("Коллекция успешно создана");
                     break;
                 case 2: // добавить игру в коллекцию
@@ -400,27 +401,30 @@ public class Program
         return from store in collection
                 from game in store.Value
                 where game is VideoGame
-                join t in keysDatabase on (game.Name) equals t.GameName
+                join key in keysDatabase on (game.Name) equals key.GameName
                 select new
                 {
-                    game, t
+                    game, key
                 };
 
     }
-    
+
     /// <summary>
     /// Получаем коллекцию сети в магазинов и какие игры есть в каждом магазине.
     /// </summary>
-    /// <param name="marketsCount"></param>
+    /// <param name="marketsCount">Количество магазинов, т.е. количество списков в словаре</param>
+    /// <param name="countGetter">Нужна, чтобы корректно протестировать данную функцию
+    /// (чтобы убрать пользовательский ввод прямо отсюда), передается индекс текущего магазина
+    /// </param>
     /// <returns>Вернуть коллекцию магазинов с их ассортиментом</returns>
-    public static SortedDictionary<int, List<Game>> GetPart1Collection(int marketsCount)
+    public static SortedDictionary<int, List<Game>> GetPart1Collection(int marketsCount, Func<int, int> countGetter)
     {
         var markets = new SortedDictionary<int, List<Game>>();
 
         for (int i = 0; i < marketsCount; i++)
         {
-            uint gamesCount = Helpers.Helpers.EnterUInt("количество игр в магазине #" + (i + 1).ToString(), 1, 5);
-            markets.Add(i, GetGames((int)gamesCount));
+            int gamesCount = countGetter(i);
+            markets.Add(i, GetGames(gamesCount));
         }
 
         return markets;
@@ -511,7 +515,8 @@ public class Program
     /// <summary>
     /// Создать рандомную игру с помощью ДСЧ
     /// </summary>
-    /// <returns></returns>
+    /// <returns>Игру, созданную с помощью ДСЧ</returns>
+    [ExcludeFromCodeCoverage]
     private static Game GetRandomGame()
     {
         var rnd = Helpers.Helpers.GetOrCreateRandom();
@@ -539,6 +544,7 @@ public class Program
     /// Пользовательский ввод игры
     /// </summary>
     /// <returns>Корректная игра, введенная пользователем</returns>
+    [ExcludeFromCodeCoverage]
     private static Game GetUserGame()
     {
         var gameType = Helpers.Helpers.EnterUInt("тип игры(1: игра, 2: видеоигра, 3: VR игра)", 1, 3);
